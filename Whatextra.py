@@ -92,8 +92,8 @@ def check_predefined(string):
     if ("What" in string or "what" in string) and ("university" in string or "education" in string):
         return ["P69"]
     if ("What" in string or "what" in string) and ("date" in string or "year" in string) and (
-            "inception" in string or "founded" in string or "invented" in string):
-        return ["P571"]
+            "inception" in string or "founded" in string or "invented" in string or "published"in string):
+        return ["P571","P577"]
     if ("What" in string or "what" in string) and ("city" in string or "country" in string) and (
             "founded" in string or "invented" in string):
         return ["P740", "P495"]
@@ -157,7 +157,7 @@ def create_and_fire_queryWhatextra(line):
             flag = 1
 
     for token in parse:
-        # print("\t".join((token.text, token.dep_)))
+        print("\t".join((token.text, token.dep_)))
         if token.text == "The":
             obj.append(token.text)
         if token.dep_ == "nsubj" or token.dep_ == "attr" or token.dep_ == "dobj":
@@ -198,6 +198,8 @@ def create_and_fire_queryWhatextra(line):
     for e in json2['search']:
         result_en.append(e['id'])
 
+
+    print(allobj)
     # Print available answers
     findflag = 0
     for X in result_pro:
