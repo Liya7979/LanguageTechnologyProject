@@ -49,7 +49,7 @@ def check_type(string):
             if answer == 1:
                 print("Due to")
 
-        if ("Who" in string or "What" in string or "who" in string or "what" in string) and answer == 0:
+        if ("Who" in string or "What" in string or "who" in string or "what" in string) and answer == 0 and check_superlative(string) is False:
             if "'s" in string or "s'" in string or "’s" in string:
                 answer = create_and_fire_queryWhowhatpocession(string)
                 if answer == 1:
@@ -97,10 +97,10 @@ def check_type(string):
 
 
 def main(argv):
-    f = open("questions_liya.txt", "r+", encoding="utf-8")
+    f = open("questions_livia.txt", "r+", encoding="utf-8")
     for line in sys.stdin:
-        # for line in f:
-        line = line.rstrip()  # removes newline
+    #for line in f:
+        line = line.strip()  # removes newline
         if not line:
             continue
         print(line)

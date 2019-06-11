@@ -56,16 +56,13 @@ def find_matches_ent(string):
     entities = []
     for result in json['search']:
         entities.append(result['id'])
-    print("in find_matches_ent", entities)
     return entities
 
 
 def find_matches_prop(string):
     properties = []
     prop = check_predefined(string)
-    print("got here?")
     if prop is not None:
-        print("prop", prop)
         return prop
     else:
         if "when" in string:
@@ -76,7 +73,6 @@ def find_matches_prop(string):
         json = requests.get(url_api, params_prop).json()
         for result in json['search']:
             properties.append(result['id'])
-    print("in find_matches_prop", properties)
     return properties
 
 
