@@ -47,8 +47,11 @@ def answer_count_question(question):
                     if flag == 1:
                         flag_to_break = 1
                         break
+
     if flag == 0:
         return 0
+    else:
+        return 1
 
 
 def check_for_special(question, segm):
@@ -79,13 +82,17 @@ def print_answer(query):
     # zero flag is returned when no answer was found
     flag = 0
     url = 'https://query.wikidata.org/sparql'
-    data = requests.get(url, params={'query': query, 'format': 'json'}).json()
-    for item in data['results']['bindings']:
-        for var in item:
-            if item[var]['value'] is "0":
-                return 0
-            flag = 1
-            print(item[var]['value'])
+    try:
+        data = requests.get(url, params={'query': query, 'format': 'json'}).json()
+        if data['results']['bindings'] is not None:
+            for item in data['results']['bindings']:
+                for var in item:
+                    if item[var]['value'] is "0":
+                        return 0
+                    flag = 1
+                    print(item[var]['value'])
+    except:
+        return 0
     return flag
 
 

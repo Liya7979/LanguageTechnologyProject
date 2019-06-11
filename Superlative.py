@@ -12,7 +12,8 @@ input_parser = {
     'highest': 'highest note',
     'era': 'earliest date',
     'flutes': 'flute',
-    'genre': 'music genre'
+    'genre': 'music genre',
+    'film': 'filmography'
 }
 entity_match = {
     'Q116': 'Q15862',
@@ -27,6 +28,18 @@ is_general = False
 is_streamed = False
 is_award = False
 nlp = spacy.load('en_core_web_sm')
+
+
+def check_superlative(question):
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(question)
+    superlative = False
+
+    for i in doc:
+        if (i.tag_ == "JJS" or i.tag_ == "RBS"):
+            superlative = True
+            break
+    return superlative
 
 
 def answer_superlative_question(question):
@@ -48,11 +61,11 @@ def answer_superlative_question(question):
             if i != j:
                 query = create_and_fire_query(j, i, question)
                 if query is not None:
+                    # print(i, "---", j, "\n ", query, is_general, "<- general", is_released, "<- released", is_inception, "<- inception", is_youngest, "<- young", is_award, "<-award", is_object, "<- object", is_streamed, "<-stream")
                     flag = print_answer(query)
                     if flag == 1:
                         flag_to_break = 1
                         break
-
     if flag == 0:
         return 0
 
@@ -98,14 +111,17 @@ def print_answer(query):
     # zero flag is returned when no answer was found
     flag = 0
     url = 'https://query.wikidata.org/sparql'
-    data = requests.get(url, params={'query': query, 'format': 'json'}).json()
-    for item in data['results']['bindings']:
-        for var in item:
-            if item[var]['value'] is "0":
-                return 0
-            flag = 1
-            print(item[var]['value'])
-            reinitialize_globals()
+    try:
+        data = requests.get(url, params={'query': query, 'format': 'json'}).json()
+        for item in data['results']['bindings']:
+            for var in item:
+                if item[var]['value'] is "0":
+                    return 0
+                flag = 1
+                print(item[var]['value'])
+                reinitialize_globals()
+    except:
+        return 0
     return flag
 
 
@@ -123,7 +139,6 @@ def create_query(prop, entity):
     global is_inception
     additional_property = 'P577' if is_object is True else 'P569'
     order = 'DESC(?band)' if is_youngest is True else '?band'
-
     if is_streamed is True:
         query = 'SELECT ?songLabel ' \
                 'WHERE{ ?song wdt:P31 wd:Q193977. ' \

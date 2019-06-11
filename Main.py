@@ -1,24 +1,23 @@
-import requests
 import sys
-import spacy
+
 from Dueto import create_and_fire_queryDueto
-#from How import create_and_fire_query_How
-from Whatextra import create_and_fire_queryWhatextra
+from How import create_and_fire_query_How
+from Howmany import answer_count_question
+from Superlative import answer_superlative_question
+from Superlative import check_superlative
 from WhatWhoOfDescription import create_and_fire_queryWhatWhoOfD
+from Whatextra import create_and_fire_queryWhatextra
 from WhenWhere import create_and_fire_query_WhenWhere
+from Which import create_and_fire_query_adv
 from WhoExtra import create_and_fire_queryWhoextra
 from Whowhatpocession import create_and_fire_queryWhowhatpocession
 from YesorNoBe import create_and_fire_queryYesorNoBe
 from YesorNoDo import create_and_fire_queryYesorNoDo
-from Howmany import answer_count_question
-from Which import create_and_fire_query_adv
-from Superlative import answer_superlative_question
 
 
 def check_type(string):
     answer = 0
-    nlp = spacy.load('en_core_web_sm')
-    doc = nlp(string)
+
     if string:
         Keyword = string.split()[0]
         if ("Are" in Keyword or "Is" in Keyword or "are" in Keyword or "is" in Keyword or "Was" in Keyword
@@ -32,7 +31,8 @@ def check_type(string):
         if ("Due" in Keyword or "due" in Keyword) and answer == 0:
             answer = create_and_fire_queryDueto(string)
 
-        if ("Who" in string or "What" in string or "who" in string or "what" in string) and answer == 0:
+        if ("Who" in string or "What" in string or "who" in string or "what" in string) and answer == 0 and \
+                not check_superlative(string):
             if "'s" in string or "s'" in string or "’s" in string:
                 answer = create_and_fire_queryWhowhatpocession(string)
             if answer == 0 and ("Who" in string or "who" in string):
@@ -46,35 +46,35 @@ def check_type(string):
         if ("When" in string or "Where" in string or "when" in string or "where" in string) and answer == 0:
             answer = create_and_fire_query_WhenWhere(string)
 
-        #if ("How" in string or "how" in string) and answer == 0:
-        #    answer = create_and_fire_query_How(string)
-
-        if ("How many" or "how many" in string) and answer == 0:
+        if ("How many" in string and answer is 0) or ("how many" in string and answer is 0):
             answer = answer_count_question(string)
+        if ("How" in string or "how" in string) and answer == 0:
+            answer = create_and_fire_query_How(string)
 
-        superlative = False
-        for i in doc:
-            if i.tag_ == "JJS" or i.tag_ == "RBS" or i.tag_ == "JJ":
-                superlative = True
-                break
-        if superlative is True:
+        if check_superlative(string) is True and answer is 0:
+            print("Superlative!")
             answer = answer_superlative_question(string)
-
         if answer == 0:
             answer = create_and_fire_query_adv(string)
 
     return answer
 
+
 def main(argv):
-    f = open("questions.txt", "r+")
-   # for line in sys.stdin:
+    f = open("questions_liya.txt", "r+", encoding="utf-8")
+    # for line in sys.stdin:
     for line in f:
         line = line.rstrip()  # removes newline
         print(line)
+        # try:
         answer = check_type(line)
+        # except Exception as e:
+        # print("Crashed: ", e)
         if answer == 0:
             print("No answer available")
 
+
     f.close()
+
 if __name__ == "__main__":
     main(sys.argv)
