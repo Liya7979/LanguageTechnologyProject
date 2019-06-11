@@ -116,7 +116,7 @@ def find_answer(properties, entities):
     for entity in entities:
         for property in properties:
             ans = make_query(property, entity)
-            if ans is not None:
+            if ans:
                 return ans
     return ans
 
@@ -157,6 +157,7 @@ def create_and_fire_query_How(line):
     dobject = []
     pobject = []
     poss = []
+    extra = []
 
     flag = 0
     for token in line:
@@ -164,7 +165,7 @@ def create_and_fire_query_How(line):
             flag = 1 - flag
             continue
         if flag == 1:
-            subject.append(token.text)
+            extra.append(token.text)
             continue
         if "nsubj" in token.dep_ and token.lemma_ != "-PRON-":
             subject.append(token.lemma_)
@@ -189,6 +190,7 @@ def create_and_fire_query_How(line):
     dobject = fix_redundancy(' '.join(dobject))
     pobject = fix_redundancy(' '.join(pobject))
     poss = fix_redundancy(' '.join(poss))
+    extra = ' '.join(extra)
 
     # print("subject", subject)
     # print("predicate", predicate)
@@ -230,8 +232,13 @@ def create_and_fire_query_How(line):
             entities = find_matches_ent(dobject)
     ans = find_answer(properties, entities)
     if not ans:
+        if adv and extra:
+            properties = find_matches_prop(adv)
+            entities = find_matches_ent(extra)
+            ans = find_answer(properties, entities)
+    if not ans:
         return 0
     else:
         for a in ans:
-            print(a)
+            print(str(a))
     return 1
