@@ -82,6 +82,7 @@ def print_answer(query):
     # zero flag is returned when no answer was found
     flag = 0
     url = 'https://query.wikidata.org/sparql'
+    ans = []
     try:
         data = requests.get(url, params={'query': query, 'format': 'json'}).json()
         if data['results']['bindings'] is not None:
@@ -90,9 +91,14 @@ def print_answer(query):
                     if item[var]['value'] is "0":
                         return 0
                     flag = 1
-                    print("\t",item[var]['value'])
+                    ans.append(item[var]['value'])
     except:
         return 0
+    if len(ans) > 1:
+        print("\t", len(ans))
+    else:
+        print("\t", ans[0])
+
     return flag
 
 

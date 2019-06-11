@@ -111,6 +111,7 @@ def print_answer(query):
     # zero flag is returned when no answer was found
     flag = 0
     url = 'https://query.wikidata.org/sparql'
+    ans = []
     try:
         data = requests.get(url, params={'query': query, 'format': 'json'}).json()
         for item in data['results']['bindings']:
@@ -118,10 +119,11 @@ def print_answer(query):
                 if item[var]['value'] is "0":
                     return 0
                 flag = 1
-                print("\t", item[var]['value'])
+                ans.append(item[var]['value'])
                 reinitialize_globals()
     except:
         return 0
+    print("\t", '\t'.join(ans))
     return flag
 
 

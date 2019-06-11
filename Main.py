@@ -99,10 +99,10 @@ def check_type(string):
 
 
 def main(argv):
-    f = open("q_liya.txt", "r", encoding="utf-8")
+    f = open("questions.txt", "r", encoding="utf-8")
     index = 1
-    # for line in sys.stdin:
-    for line in f:
+    for line in sys.stdin:
+    #for line in f:
         question = line.split('\t')
         if len(question) > 1: line = question[1]
         line = line.strip()
