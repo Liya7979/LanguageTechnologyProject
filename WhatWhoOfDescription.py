@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import requests
-import sys
 import spacy
 
 nlp = spacy.load("en_core_web_sm")
@@ -14,7 +13,7 @@ params_en = {'action': 'wbsearchentities', 'language': 'en', 'format': 'json'}
 
 # Pre-defined Dictionary
 prop_dict = {
-    "band member":"has part",
+    "band member": "has part",
     "member": "has part",
     "real name": "birth name",
     "where bear": "place of birth",
@@ -24,8 +23,9 @@ prop_dict = {
     "child": "children",
 }
 
+
 # Entity Special cases
-def special_checking(line,allobj):
+def special_checking(line, allobj):
     if "A-Ha" in line:
         allobj = "A-Ha"
     if "BTS" in line:
@@ -36,11 +36,13 @@ def special_checking(line,allobj):
         allobj = "The Eagles"
     return allobj
 
+
 # Negation fix
 def fix_negation(string):
-	if "n't" in string:
-		return string.replace(" n't", "n't")
-	return string
+    if "n't" in string:
+        return string.replace(" n't", "n't")
+    return string
+
 
 # query with wikidata
 def query(prop, entity):
@@ -52,9 +54,10 @@ def query(prop, entity):
     data = requests.get(url_2, params={'query': query, 'format': 'json'}).json()
     return data
 
+
 def what_is_x(string):
     params_en['search'] = string
-    json = requests.get(url_1,params_en).json()
+    json = requests.get(url_1, params_en).json()
     entities = []
     if not json:
         return entities
@@ -63,7 +66,7 @@ def what_is_x(string):
         return entities
 
     for result in json['search']:
-        #print("{}\t{}\t{}".format(result['id'], result['label'], result['description']))
+        # print("{}\t{}\t{}".format(result['id'], result['label'], result['description']))
         if result['description']:
             entities.append(result['description'])
         if entities:
@@ -75,7 +78,7 @@ def create_and_fire_queryWhatWhoOfD(line):
     parse = nlp(line.rstrip())
     subj = []
     obj = []
-    labeled=[]
+    labeled = []
     flag = 0
     for ent in parse.ents:
         if (ent.label_ != []):
@@ -104,7 +107,6 @@ def create_and_fire_queryWhatWhoOfD(line):
                         obj.append(t2.lemma_)
                     if t2.dep_ == "compound" and t2.head.dep_ == "pobj":
                         obj.append(t2.lemma_)
-
 
     if not subj:
         return 0
@@ -168,5 +170,3 @@ def create_and_fire_queryWhatWhoOfD(line):
                     return 1
 
     return 0
-
-

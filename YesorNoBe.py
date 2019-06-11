@@ -1,6 +1,7 @@
-import spacy
-import requests
 import re
+
+import requests
+import spacy
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -18,6 +19,7 @@ prop_dict = {
     "child": "children"
 }
 
+
 # query with wikidata
 def query(prop, entity):
     query = '''
@@ -33,46 +35,46 @@ def create_and_fire_queryYesorNoBe(line):
     parse = nlp(line)
     subj = []
     obj = []
-    answer1=[]
-    answer2=[]
-    labeled =[]
-    conj=[]
-    result=[]
-    allanswer1=""
-    allanswer2=""
-    allsub=""
-    allobj=""
-    cc=0
-    onlyflag=0
-    personflag=0
-    orgflag=0
-    type1=0         # Dependency Method: Yes/No question for " Is X Y of Z ? "
-    type2=0         # Dependency Method: Yes/No question for " Is X Y ? " In most of cases, it asked occupation ???
-    type3=0         # Regular expression Method: when type 1 and type 2 failed
+    answer1 = []
+    answer2 = []
+    labeled = []
+    conj = []
+    result = []
+    allanswer1 = ""
+    allanswer2 = ""
+    allsub = ""
+    allobj = ""
+    cc = 0
+    onlyflag = 0
+    personflag = 0
+    orgflag = 0
+    type1 = 0  # Dependency Method: Yes/No question for " Is X Y of Z ? "
+    type2 = 0  # Dependency Method: Yes/No question for " Is X Y ? " In most of cases, it asked occupation ???
+    type3 = 0  # Regular expression Method: when type 1 and type 2 failed
 
     # Name entities searching
     for ent in parse.ents:
         if (ent.label_ != []):
             labeled.append(ent.lemma_)
-            if(ent.label_=="PERSON"):
-                personflag=1
-            if(ent.label_=="ORG"):
-                orgflag=1
+            if (ent.label_ == "PERSON"):
+                personflag = 1
+            if (ent.label_ == "ORG"):
+                orgflag = 1
 
     # Type matching
     for token in parse:
         if token.dep_ == "attr":
-            type2=1
-        if(token.dep_=="prep")and(token.lemma_=="of"):
-            type1=1
-            type2=0
-    if(type1==0)and(type2==0):
-        type3=1
+            type2 = 1
+        if (token.dep_ == "prep") and (token.lemma_ == "of"):
+            type1 = 1
+            type2 = 0
+    if (type1 == 0) and (type2 == 0):
+        type3 = 1
 
     # Yes/No question for " Is X Y of Z ? "
-    if(type1==1):
+    if (type1 == 1):
         for token in parse:
-            #print("\t".join((token.text, token.dep_)))
+            # print("\t".join((token.text, token.dep_)))
             if token.dep_ == "cc" and token.lemma_ == "and":
                 cc = cc + 1
                 conj.append(token.lemma_)
@@ -144,9 +146,9 @@ def create_and_fire_queryYesorNoBe(line):
             allsub = prop_dict[allsub]
 
     # Yes/No question for " Is X Y ? "
-    if(type2==1):
+    if (type2 == 1):
         for token in parse:
-            #print("\t".join((token.text, token.dep_)))
+            # print("\t".join((token.text, token.dep_)))
             if token.lemma_ == "be" and token.dep_ == "ROOT":
                 for t1 in token.subtree:
                     if t1.dep_ == "nsubj" or t1.dep_ == "acomp":
@@ -154,7 +156,7 @@ def create_and_fire_queryYesorNoBe(line):
                     if t1.dep_ == "compound" and t1.head.dep_ == "nsubj":
                         obj.append(t1.lemma_)
                 for t2 in token.subtree:
-                    if t2.dep_=="advmod" or t2.dep_=="attr":
+                    if t2.dep_ == "advmod" or t2.dep_ == "attr":
                         answer1.append(t2.lemma_)
                     if t2.dep_ == "compound" and (t2.head.dep_ == "attr" or t2.head.dep_ == "advmod"):
                         answer1.append(t2.lemma_)
@@ -192,14 +194,14 @@ def create_and_fire_queryYesorNoBe(line):
             allsub = "occupation"
 
     # Regular expression method
-    if(type3==1):
+    if (type3 == 1):
         s = re.sub('[?]', '', line)
         m = re.search('(Is|Are)(.*)(a|the)(.*)', s)
         if not m:
             print("Yes")
             return
-        allobj=(m.group(2))
-        allanswer1=(m.group(4))
+        allobj = (m.group(2))
+        allanswer1 = (m.group(4))
 
         if ("only" in allobj):
             onlyflag = 1
@@ -221,16 +223,16 @@ def create_and_fire_queryYesorNoBe(line):
             allsub = prop_dict[allsub]
 
         if not allsub:
-            if(personflag==1):
+            if (personflag == 1):
                 allsub = "occupation"
-            if(orgflag==1):
+            if (orgflag == 1):
                 allsub = "instance of"
 
-        #Guess step
-        if(personflag==0 and orgflag==0):
+        # Guess step
+        if (personflag == 0 and orgflag == 0):
             allsub = "occupation"
 
-    if (allsub=="")or(allobj=="")or(allanswer1==""):
+    if (allsub == "") or (allobj == "") or (allanswer1 == ""):
         # Random Guess
         print("Yes")
         return 1
@@ -293,4 +295,3 @@ def create_and_fire_queryYesorNoBe(line):
         # No answers available : Random Guess
         print("Yes")
         return 1
-

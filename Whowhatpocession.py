@@ -1,5 +1,5 @@
-import spacy
 import requests
+import spacy
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -22,8 +22,10 @@ prop_dict = {
     "when bear": "date of birth",
     "child": "children"
 }
+
+
 # Entity Special cases
-def special_checking(line,allobj):
+def special_checking(line, allobj):
     if "A-Ha" in line:
         allobj = "A-Ha"
     if "BTS" in line:
@@ -32,11 +34,13 @@ def special_checking(line,allobj):
         allobj = "The Script"
     return allobj
 
+
 # Negation fix
 def fix_negation(string):
-	if "n't" in string:
-		return string.replace(" n't", "n't")
-	return string
+    if "n't" in string:
+        return string.replace(" n't", "n't")
+    return string
+
 
 # query with wikidata
 def query(prop, entity):
@@ -62,17 +66,17 @@ def create_and_fire_queryWhowhatpocession(line):
             labeled.append(ent.lemma_)
 
     for token in parse:
-        #print("\t".join((token.text, token.dep_)))
+        # print("\t".join((token.text, token.dep_)))
         if (token.dep_ == "poss"):
             obj.append(token.lemma_)
         if (token.dep_ == "compound" or token.dep_ == "amod") and (token.head.dep_ == "poss"):
             obj.append(token.lemma_)
         if token.dep_ == "case":
             start = 1
-        if start ==1:
-            if token.dep_ == "attr" or token.dep_ == "nsubj" :
+        if start == 1:
+            if token.dep_ == "attr" or token.dep_ == "nsubj":
                 subj.append(token.lemma_)
-            if (token.dep_ == "compound")and (token.head.dep_ == "attr" or token.dep_ == "nsubj"):
+            if (token.dep_ == "compound") and (token.head.dep_ == "attr" or token.dep_ == "nsubj"):
                 subj.append(token.lemma_)
 
     allsub = (" ".join(subj))
@@ -112,7 +116,7 @@ def create_and_fire_queryWhowhatpocession(line):
         result_pro.append(p['id'])
     for e in json2['search']:
         result_en.append(e['id'])
-    if(flag == 1):
+    if (flag == 1):
         for j in json3['search']:
             result_en.append(j['id'])
 

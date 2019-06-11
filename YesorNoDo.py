@@ -1,6 +1,5 @@
-import spacy
 import requests
-import re
+import spacy
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -17,7 +16,7 @@ prop_dict = {
     "real name": "birth name",
     "child": "children",
     "play": "instrument",
-    "influence":"influenced by",
+    "influence": "influenced by",
     "make": "genre"
 }
 
@@ -25,7 +24,6 @@ prop_dict = {
 en_dict = {
     "Ludwig van": "Ludwig van Beethoven"
 }
-
 
 
 # query with wikidata
@@ -48,8 +46,8 @@ def create_and_fire_queryYesorNoDo(line):
     labeled = []
     result = []
     allanswer2 = ""
-    onlyflag=0
-    cc=0
+    onlyflag = 0
+    cc = 0
 
     # Name entities searching
     for ent in parse.ents:
@@ -61,33 +59,33 @@ def create_and_fire_queryYesorNoDo(line):
                 orgflag = 1
 
     for token in parse:
-        #print("\t".join((token.text, token.dep_)))
-        if(token.dep_=="ROOT"):
+        # print("\t".join((token.text, token.dep_)))
+        if (token.dep_ == "ROOT"):
             subj.append(token.lemma_)
             for t in token.subtree:
-                if t.dep_=="nsubj":
+                if t.dep_ == "nsubj":
                     obj.append(t.lemma_)
-                if t.dep_=="compound" and t.head.dep_=="nsubj":
+                if t.dep_ == "compound" and t.head.dep_ == "nsubj":
                     obj.append(t.lemma_)
-                if t.dep_=="dobj"or t.dep_=="pobj":
+                if t.dep_ == "dobj" or t.dep_ == "pobj":
                     answer1.append(t.lemma_)
-                if (t.dep_=="compound" or t.dep_=="amod") and (t.head.dep_=="dobj" or t.head.dep_=="pobj"):
+                if (t.dep_ == "compound" or t.dep_ == "amod") and (t.head.dep_ == "dobj" or t.head.dep_ == "pobj"):
                     answer1.append(t.lemma_)
-                if(t.dep_=="cc") and (t.lemma_=="and"):
-                    cc=cc+1
+                if (t.dep_ == "cc") and (t.lemma_ == "and"):
+                    cc = cc + 1
                 if t.dep_ == "conj":
                     answer2.append(t.lemma_)
                 if t.dep_ == "compound" and t.head.dep_ == "conj":
                     answer2.append(t.lemma_)
 
-        if(token.dep_=="advmod")and(token.lemma_=="only"):
-            onlyflag=1
+        if (token.dep_ == "advmod") and (token.lemma_ == "only"):
+            onlyflag = 1
 
     allsub = (" ".join(subj))
     allobj = (" ".join(obj))
-    allanswer1= (" ".join(answer1))
+    allanswer1 = (" ".join(answer1))
 
-    if (allsub=="")or(allobj=="")or(allanswer1==""):
+    if (allsub == "") or (allobj == "") or (allanswer1 == ""):
         # Random Guess
         print("Yes")
         return
@@ -127,7 +125,6 @@ def create_and_fire_queryYesorNoDo(line):
         result_pro.append(p['id'])
     for e in json2['search']:
         result_en.append(e['id'])
-
 
     # Print available answers
     findflag = 0

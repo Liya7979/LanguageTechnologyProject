@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import requests
-import sys
 import spacy
-import re
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -13,7 +11,8 @@ url_2 = "https://query.wikidata.org/sparql"
 params_prop = {'action': 'wbsearchentities', 'language': 'en', 'format': 'json', 'type': 'property'}
 params_en = {'action': 'wbsearchentities', 'language': 'en', 'format': 'json'}
 
-def special_checking(line,allobj):
+
+def special_checking(line, allobj):
     if "A-Ha" in line:
         allobj = "A-Ha"
     if "BTS" in line:
@@ -22,8 +21,8 @@ def special_checking(line,allobj):
         allobj = "The Script"
     return allobj
 
-def fix_redundancy(string):
 
+def fix_redundancy(string):
     if "what" in string:
         string = string.replace("what", "")
 
@@ -32,6 +31,7 @@ def fix_redundancy(string):
 
     return string
 
+
 def check_predefined(string):
     if ("What" in string or "what" in string) and ("occupations" in string or "occupation" in string):
         return ["P106"]
@@ -39,26 +39,30 @@ def check_predefined(string):
         return ["P136"]
     if ("What" in string or "what" in string) and "date" in string and "born" in string:
         return ["P569"]
-    if ("What" in string or "what" in string) and "date" in string and ("die" in string or "died" in string or "dies" in string):
+    if ("What" in string or "what" in string) and "date" in string and (
+            "die" in string or "died" in string or "dies" in string):
         return ["P570"]
     if ("What" in string or "what" in string) and "place" in string and "born" in string:
         return ["P19"]
-    if ("What" in string or "what" in string) and "place" in string and ("die" in string or "died" in string or "dies" in string or "death" in string):
+    if ("What" in string or "what" in string) and "place" in string and (
+            "die" in string or "died" in string or "dies" in string or "death" in string):
         return ["P20"]
-    if ("What" in string or "what" in string) and "cause" in string and ("die" in string or "died" in string or "dies" in string or "death" in string):
+    if ("What" in string or "what" in string) and "cause" in string and (
+            "die" in string or "died" in string or "dies" in string or "death" in string):
         return ["P509"]
     if ("What" in string or "what" in string) and ("instrument" in string or "instruments" in string):
         return ["P1303"]
-    if ("What" in string or "what" in string) and ("bands"in string or "band" in string) and ("play" in string or "played" in string or "plays" in string or "perform" in string or "performs" in string or"performed"in string):
-        return ["P463","P361","P527"]
+    if ("What" in string or "what" in string) and ("bands" in string or "band" in string) and (
+            "play" in string or "played" in string or "plays" in string or "perform" in string or "performs" in string or "performed" in string):
+        return ["P463", "P361", "P527"]
     if ("What" in string or "what" in string) and "country" in string and "from":
-        return ["P27","P495"]
+        return ["P27", "P495"]
     if ("What" in string or "what" in string) and "record label" in string:
         return ["P264"]
     if ("What" in string or "what" in string) and ("award" in string or "awards" in string):
         return ["P166"]
-    if ("What" in string or "what" in string) and ("kills" in string or "killed" in string or "killer"in string):
-        return ["P157","P509"]
+    if ("What" in string or "what" in string) and ("kills" in string or "killed" in string or "killer" in string):
+        return ["P157", "P509"]
 
 
 # query with wikidata
@@ -71,6 +75,7 @@ def query(prop, entity):
     data = requests.get(url_2, params={'query': query, 'format': 'json'}).json()
     return data
 
+
 def create_and_fire_queryWhatextra(line):
     parse = nlp(line.rstrip())
     obj = []
@@ -82,19 +87,19 @@ def create_and_fire_queryWhatextra(line):
             labeled.append(ent.lemma_)
 
     for token in parse:
-        #print("\t".join((token.text, token.dep_)))
+        # print("\t".join((token.text, token.dep_)))
         if token.text == "The":
             obj.append(token.text)
-        if token.dep_ == "nsubj" or token.dep_ == "attr" or token.dep_=="dobj":
+        if token.dep_ == "nsubj" or token.dep_ == "attr" or token.dep_ == "dobj":
             obj.append(token.text)
-        if token.dep_ == "compound" and (token.head.dep_ == "nsubj" or token.head.dep_ == "attr" or token.head.dep_ == "dobj"  ):
+        if token.dep_ == "compound" and (
+                token.head.dep_ == "nsubj" or token.head.dep_ == "attr" or token.head.dep_ == "dobj"):
             obj.append(token.text)
-
 
     allobj = (" ".join(obj))
 
     # Special entity checking
-    allobj = special_checking(line,allobj)
+    allobj = special_checking(line, allobj)
     allobj = fix_redundancy(allobj)
 
     # Label checking
@@ -104,7 +109,7 @@ def create_and_fire_queryWhatextra(line):
             flag = 1
 
     # If not, back to the main function
-    if allobj =="":
+    if allobj == "":
         return 0
 
     result_pro = check_predefined(line)

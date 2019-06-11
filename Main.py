@@ -1,21 +1,24 @@
-import requests
 import sys
+import sys
+
 import spacy
+
 from Dueto import create_and_fire_queryDueto
 from How import create_and_fire_query_How
-from Whatextra import create_and_fire_queryWhatextra
+from Howmany import answer_count_question
+from Superlative import answer_superlative_question
+from Superlative import check_superlative
 from WhatWhoOfDescription import create_and_fire_queryWhatWhoOfD
+from Whatextra import create_and_fire_queryWhatextra
 from WhenWhere import create_and_fire_query_WhenWhere
+from Which import create_and_fire_query_adv
 from WhoExtra import create_and_fire_queryWhoextra
 from Whowhatpocession import create_and_fire_queryWhowhatpocession
 from YesorNoBe import create_and_fire_queryYesorNoBe
 from YesorNoDo import create_and_fire_queryYesorNoDo
-from Howmany import answer_count_question
-from Which import create_and_fire_query_adv
-from Superlative import answer_superlative_question
-from Superlative import check_superlative
-from list import create_and_fire_query_dobj
 from filter import create_and_fire_query_filter
+from list import create_and_fire_query_dobj
+
 
 def check_type(string):
     answer = 0
@@ -78,7 +81,7 @@ def check_type(string):
         if ("How" in string or "how" in string) and answer == 0:
             answer = create_and_fire_query_How(string)
             if answer == 1:
-              print("How")
+                print("How")
 
         if ("How many" in string and answer is 0) or ("how many" in string and answer is 0):
             answer = answer_count_question(string)
@@ -97,12 +100,14 @@ def check_type(string):
 
     return answer
 
+
 def main(argv):
     f = open("questions_liya.txt", "r+", encoding="utf-8")
-    #for line in sys.stdin:
+    # for line in sys.stdin:
     for line in f:
         line = line.rstrip()  # removes newline
         print(line)
+        answer = 0
         try:
             answer = check_type(line)
         except Exception as e:
@@ -110,6 +115,7 @@ def main(argv):
         if answer == 0:
             print("No answer available")
     f.close()
+
 
 if __name__ == "__main__":
     main(sys.argv)

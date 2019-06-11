@@ -1,5 +1,5 @@
-import spacy
 import requests
+import spacy
 
 input_parser = {
     'band members': 'has part',
