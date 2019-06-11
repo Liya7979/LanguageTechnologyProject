@@ -3,6 +3,6 @@ QA system assignment about music for Language Technology Practical. Completed by
 
 To run the program from stdin you can use:
 
-```echo "When was Gordon Ramsay born?" | python3 Main.py```
+```echo "1  When was Gordon Ramsay born?" | python3 Main.py```
 
 To exit the program, use Control-D
