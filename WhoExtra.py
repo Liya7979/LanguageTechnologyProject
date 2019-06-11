@@ -32,7 +32,9 @@ prop_dict = {
     "produce": "producer",
     "kill": "killer",
     "teach": "student of",
-    "in": "has part"
+    "in": "has part",
+    "create": "creator",
+    "invent": "inventor"
 }
 
 
@@ -44,6 +46,18 @@ def special_checking(line, allobj):
         allobj = "BTS"
     if "The Script" in line:
         allobj = "The Script"
+    if "The Eagles" in line:
+        allobj = "The Eagles"
+    if "AC/DC" in line:
+        allobj = "AC/DC"
+    if "Jackson 5" in line:
+        allobj = "Jackson 5"
+    if "U2" in line:
+        allobj = "U2"
+    if "MF DOOM" in line:
+        allobj = "MF DOOM"
+    if "Wu-Tang Clan" in line:
+        allobj = "Wu-Tang Clan"
     return allobj
 
 
@@ -51,6 +65,49 @@ def special_checking(line, allobj):
 def fix_negation(string):
     if "n't" in string:
         return string.replace(" n't", "n't")
+    return string
+
+
+def fix_redundancy(string):
+    if "who" in string and len(string.split()) > 1:
+        string = string.replace("who", "")
+    if "Who" in string and len(string.split()) > 1:
+        string = string.replace("Who", "")
+    if "single" in string and len(string.split()) > 1:
+        string = string.replace("single", "")
+    if "the" in string and len(string.split()) > 1:
+        string = string.replace("the", "")
+    if "song" in string and len(string.split()) > 1:
+        string = string.replace("song", "")
+    if "rock" in string and len(string.split()) > 1:
+        string = string.replace("rock", "")
+    if "pop" in string and len(string.split()) > 1:
+        string = string.replace("pop", "")
+    if "jazz" in string and len(string.split()) > 1:
+        string = string.replace("jazz", "")
+    if "original" in string and len(string.split()) > 1:
+        string = string.replace("original", "")
+    if "first" in string and len(string.split()) > 1:
+        string = string.replace("first", "")
+    if "musical" in string and len(string.split()) > 1:
+        string = string.replace("musical", "")
+    if "musician" in string and len(string.split()) > 1:
+        string = string.replace("musician", "")
+    if "music" in string and len(string.split()) > 1:
+        string = string.replace("music", "")
+    if "genre" in string and len(string.split()) > 1:
+        string = string.replace("genre", "")
+    if "song" in string and len(string.split()) > 1:
+        string = string.replace("song", "")
+    if "member" in string and len(string.split()) > 1:
+        string = string.replace("member", "")
+    if "band" in string and len(string.split()) > 1:
+        string = string.replace("band", "")
+    if "album" in string and len(string.split()) > 1:
+        string = string.replace("album", "")
+    if "group" in string and len(string.split()) > 1:
+        string = string.replace("group", "")
+
     return string
 
 
@@ -77,6 +134,7 @@ def create_and_fire_queryWhoextra(line):
     for ent in parse.ents:
         if (ent.label_ != []):
             labeled.append(ent.lemma_)
+            flag = 1
 
     for token in parse:
         # print("\t".join((token.text, token.dep_)))
@@ -103,7 +161,7 @@ def create_and_fire_queryWhoextra(line):
     if allsub in prop_dict:
         allsub = prop_dict[allsub]
 
-    allobj = re.sub('the song|the pop song|song|[?]', '', allobj)
+    allobj = fix_redundancy(allobj)
     allobj = allobj.strip()
     allobj = re.sub("^[^a-zA-Z]", "", allobj)
     allobj = re.sub("[^a-zA-Z]$", "", allobj)
@@ -113,12 +171,6 @@ def create_and_fire_queryWhoextra(line):
     # fix
     allobj = special_checking(line, allobj)
     allobj = fix_negation(allobj)
-
-    # Label checking
-    for en in labeled:
-        if en in allobj:
-            allobjother = en
-            flag = 1
 
     if (allsub == "") or (allobj == ""):
         return 0
@@ -132,17 +184,17 @@ def create_and_fire_queryWhoextra(line):
     json2 = requests.get(url_1, params_en).json()
 
     if flag == 1:
+        allobjother = (" ".join(labeled))
         params_en['search'] = allobjother
         json3 = requests.get(url_1, params_en).json()
+        for j in json3['search']:
+            result_en.append(j['id'])
 
     # Store the returning ID
     for p in json1['search']:
         result_pro.append(p['id'])
     for e in json2['search']:
         result_en.append(e['id'])
-    if (flag == 1):
-        for j in json3['search']:
-            result_en.append(j['id'])
 
     # Print available answers
     findflag = 0

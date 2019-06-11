@@ -71,16 +71,33 @@ def make_query(property, entity):
 
 
 def compute_age(birthday, death):
+    if not birthday or not death:
+        return 0
     bday = str(birthday[0])
+    if "T00:00:00Z" in bday:
+        bday = bday.replace("T00:00:00Z", "")
     dday = str(death[0])
     b = datetime.strptime(bday[0:4] + "/" + bday[5:7] + "/" + bday[8:10], "%Y/%m/%d")
     d = datetime.strptime(dday[0:4] + "/" + dday[5:7] + "/" + dday[8:10], "%Y/%m/%d")
-    return [(int(((d - b).days) / 365))]
+    print((int(((d - b).days) / 365)))
+    return 1
 
 
 def find_age(entities):
     for entity in entities:
         birthday = make_query("P569", entity)
+        if not birthday:
+            birthday = make_query("P571", entity)
+            if birthday:
+                death = make_query("P576", entity)
+                if death:
+                    return compute_age(birthday, death)
+                else:
+                    today = date.today()
+                    today = [today]
+                    return compute_age(birthday, today)
+            else:
+                return 0
         if birthday:
             death = make_query("P570", entity)
             if death:
@@ -89,7 +106,7 @@ def find_age(entities):
                 today = date.today()
                 today = [today]
                 return compute_age(birthday, today)
-    return ans
+    return 0
 
 
 def find_answer(properties, entities):
@@ -173,12 +190,12 @@ def create_and_fire_query_How(line):
     pobject = fix_redundancy(' '.join(pobject))
     poss = fix_redundancy(' '.join(poss))
 
-    # print(subject)
-    # print(predicate)
-    # print(adv)
-    # print(dobject)
-    # print(pobject)
-    # print(poss)
+    # print("subject", subject)
+    # print("predicate", predicate)
+    # print("adv", adv)
+    # print("dobject", dobject)
+    # print("pobject", pobject)
+    # print("poss", poss)
 
     entities = []
     properties = []

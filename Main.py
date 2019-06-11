@@ -1,7 +1,4 @@
 import sys
-import sys
-
-import spacy
 
 from Dueto import create_and_fire_queryDueto
 from How import create_and_fire_query_How
@@ -22,8 +19,6 @@ from list import create_and_fire_query_dobj
 
 def check_type(string):
     answer = 0
-    nlp = spacy.load('en_core_web_sm')
-    doc = nlp(string)
     if string:
         Keyword = string.split()[0]
 
@@ -73,15 +68,15 @@ def check_type(string):
                 if answer == 1:
                     print("Whowhatdes")
 
-        if ("When" in string or "Where" in string or "when" in string or "where" in string) and answer == 0:
-            answer = create_and_fire_query_WhenWhere(string)
-            if answer == 1:
-                print("whenwhere")
-
         if ("How" in string or "how" in string) and answer == 0:
             answer = create_and_fire_query_How(string)
             if answer == 1:
                 print("How")
+
+        if ("When" in string or "Where" in string or "when" in string or "where" in string) and answer == 0:
+            answer = create_and_fire_query_WhenWhere(string)
+            if answer == 1:
+                print("whenwhere")
 
         if ("How many" in string and answer is 0) or ("how many" in string and answer is 0):
             answer = answer_count_question(string)
@@ -103,9 +98,11 @@ def check_type(string):
 
 def main(argv):
     f = open("questions_liya.txt", "r+", encoding="utf-8")
-    # for line in sys.stdin:
-    for line in f:
+    for line in sys.stdin:
+        # for line in f:
         line = line.rstrip()  # removes newline
+        if not line:
+            continue
         print(line)
         answer = 0
         try:

@@ -17,6 +17,8 @@ def check_predefined(string):
         return ["P276", "P17"]
     if "where" in string and "bear" in string:
         return ["P19", "P27", "P17"]
+    if "where" in string and "start" in string:
+        return ["P740"]
     if "where" in string and ("found" in string or "form" in string):
         return ["P740"]
     if "come" in string or ("where" in string and "be" in string):
@@ -29,6 +31,8 @@ def check_predefined(string):
         return ["P740"]
     if "when" in string and "release" in string:
         return ["P577"]
+    if "when" in string and ("take" in string or "hold" in string):
+        return ["P571"]
     if "when" in string and ("die" in string or "pass away" in string):
         return ["P570"]
     if "when" in string and "bear" in string:
@@ -52,25 +56,27 @@ def find_matches_ent(string):
     entities = []
     for result in json['search']:
         entities.append(result['id'])
+    print("in find_matches_ent", entities)
     return entities
 
 
 def find_matches_prop(string):
     properties = []
     prop = check_predefined(string)
+    print("got here?")
     if prop is not None:
+        print("prop", prop)
         return prop
     else:
         if "when" in string:
             string = string.replace("when", "")
         if "where" in string:
             string = string.replace("where", "")
-        if string == "":
-            return None
         params_prop['search'] = string
         json = requests.get(url_api, params_prop).json()
         for result in json['search']:
             properties.append(result['id'])
+    print("in find_matches_prop", properties)
     return properties
 
 
@@ -95,7 +101,7 @@ def make_query(property, entity):
 
 def find_answer(properties, entities):
     ans = None
-    if not entities or not properties:
+    if len(entities) == 0 or len(properties) == 0:
         return None
 
     for entity in entities:
@@ -151,10 +157,20 @@ def fix_special_characters(string):
         string = string.replace("Too $hort", "Too Short")
     if "CD" in string:
         string = string.replace("CD", "Compact disc")
-    if "Woodstock" in string:
-        string = string.replace("Woodstock", "Woodstock festival")
+    if "festival" in string:
+        string = string.replace("festival", "Festival")
     if "Guns N' Roses" in string:
         string = string.replace("Guns N' Roses", "\"Guns N' Roses\"")
+    if "Panic at the Disco" in string:
+        string = string.replace("Panic at the Disco", "\"Panic at the Disco\"")
+    if "Panic! at the Disco" in string:
+        string = string.replace("Panic! at the Disco", "\"Panic at the Disco\"")
+    if "festival" in string:
+        string = string.replace("festival", "Festival")
+    if "Woodstock" in string:
+        if "Festival" not in string and "festival" not in string:
+            string = string.replace("Woodstock", "Woodstock Festival")
+
     return string
 
 
@@ -169,27 +185,37 @@ def create_and_fire_query_WhenWhere(line):
     extra = []
     poss = []
     appos = []
+    label = []
     ans = []
     flag = 0
+
     for token in line:
+
         if token.text == "\"":
             flag = 1 - flag
             continue
         if flag == 1:
             extra.append(token.text)
             continue
+        if token.dep_ == "ROOT":
+            predicate.append(token.lemma_)
+        if token.dep_ == "advmod" and (
+                token.head.dep_ == "ROOT" or token.head.dep_ == "nsubj" or token.head.dep_ == "dobj" or token.head.dep_ == "auxpass" or token.head.dep_ == "advcl"):
+            predicate.append(token.lemma_)
+            if (token.head.dep_ == "advcl"):
+                predicate.append(token.head.lemma_)
+
+        if token.dep_ == "nummod" and (
+                token.head.dep_ == "ROOT" or token.head.dep_ == "nsubj" or token.head.dep_ == "auxpass" or token.head.dep_ == "advcl"):
+            predicate.append(token.lemma_)
         if "nsubj" in token.dep_ and token.lemma_ != "-PRON-":
             subject.append(token.lemma_)
         if (
                 token.dep_ == "compound" or token.dep_ == "amod" or token.dep_ == "nmod" or token.dep_ == "advcl") and token.head.dep_ == "nsubj":
             subject.append(token.lemma_)
-        if token.dep_ == "ROOT":
-            predicate.append(token.lemma_)
-        if (token.dep_ == "advmod" or token.dep_ == "nummod") and (
-                token.head.dep_ == "ROOT" or token.head.dep_ == "auxpass" or token.head.dep_ == "advcl"):
-            predicate.append(token.lemma_)
-            if (token.head.dep_ == "advcl"):
-                predicate.append(token.head.lemma_)
+        if token.ent_type_ and token.ent_type_ != "NORP":
+            label.append(token.text)
+
         if "dobj" in token.dep_ or ((token.dep_ == "nmod" or token.dep_ == "compound") and token.head.dep_ == "dobj"):
             dobject.append(token.lemma_)
         if token.dep_ == "poss" or (token.dep_ == "compound" and token.head.dep_ == "poss"):
@@ -199,11 +225,12 @@ def create_and_fire_query_WhenWhere(line):
             appos.append(token.text)
 
     subject = fix_redundancy(' '.join(subject))
-    predicate = fix_negation(' '.join(predicate))
+    predicate = fix_redundancy(fix_negation(' '.join(predicate)))
     extra = fix_negation(' '.join(extra))
     dobject = fix_redundancy(' '.join(dobject))
     poss = fix_redundancy(' '.join(poss))
     appos = fix_redundancy(' '.join(appos))
+    label = ' '.join(label)
 
     # new
 
@@ -215,6 +242,11 @@ def create_and_fire_query_WhenWhere(line):
     if subject and poss and not ans:
         entities = find_matches_ent(poss)
         properties = find_matches_prop(subject)
+        ans = find_answer(properties, entities)
+
+    if predicate and label and not ans:
+        entities = find_matches_ent(label)
+        properties = find_matches_prop(predicate)
         ans = find_answer(properties, entities)
 
     if dobject and predicate and not ans:
@@ -252,3 +284,5 @@ def create_and_fire_query_WhenWhere(line):
             print(str(a))
         return 1
     return 0
+
+    return ans

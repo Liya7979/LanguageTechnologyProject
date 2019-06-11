@@ -11,6 +11,16 @@ nlp = spacy.load("en_core_web_sm")
 
 
 def check_predefined(string):
+    if "base" in string:
+        return ["P4969"]
+    if "label" in string:
+        return ["P264"]
+    if "school" in string or "university" in string or "educate" in string:
+        return ["P69"]
+    if "name" in string and "stage" in string:
+        return ["P742"]
+    if "pet" in string:
+        return ["P1429"]
     if "name" in string:
         return ["P1477", "P735"]
     if "record label" in string:
@@ -20,19 +30,25 @@ def check_predefined(string):
     if "break" in string or "stop" in string:
         return ["P576"]
     if "city" in string or "town" in string:
-        return ["P19", "P470", "P131", "P495"]
+        return ["P740", "P19", "P470", "P131", "P495"]
     if "bear" in string:
-        return ["P569", "P19"]
+        return ["P569", "P19", "P1477", "P735"]
     if "band" in string or "member" in string or "part" in string:
-        return ["P463", "P361"]
+        return ["P463", "P361", "P527"]
     if "be" in string:
-        return ["P175"]
+        return ["P175", "P19", "P470", "P131", "P495"]
     if "found" in string or "form" in string:
         return ["P112", "P571", "P127"]
     if "perform" in string or "album" in string:
         return ["P361", "P1729"]
     if "start" in string or "invent" in string or "century" in string or "year" in string or "date" in string:
         return ["P571", "P2031", "P575"]
+    if "lead" in string or "singer" in string or "guitarist" in string or "drummer" in string:
+        return ["P527"]
+    if "how" in string and "die" in string:
+        return ["P509", "P1196"]
+    if "superclass" in string or "instance" in string or "type" in string:
+        return ["P279", "P31"]
     return None
 
 
@@ -88,10 +104,15 @@ def find_answer(properties, entities):
     if not entities or not properties:
         return None
     ans = None
+    flag = 0
+    if properties == ["P527"]:
+        flag = 1
     for entity in entities:
         for property in properties:
             ans = make_query(property, entity)
             if ans:
+                if flag == 1:
+                    return [ans[0]]
                 return ans
     return ans
 
@@ -109,6 +130,10 @@ def fix_negation(string):
 def fix_redundancy(string):
     if "which" in string:
         string = string.replace("which", "")
+        if string == "":
+            return None
+    if "who" in string:
+        string = string.replace("who", "")
         if string == "":
             return None
     if "rock" in string and len(string.split()) > 1:
@@ -161,6 +186,7 @@ def create_and_fire_query_adv(line):
 
     flag = 0
     for token in line:
+        # print(token.text, token.lemma_, token.dep_, token.head.lemma_)
         if token.text == "\"":
             flag = 1 - flag
             continue
@@ -191,7 +217,8 @@ def create_and_fire_query_adv(line):
         if (token.dep_ == "appos" and ("nsubj" in token.head.dep_ or token.head.dep_ == "attr")) or (
                 token.dep_ == "compound" and token.head.dep_ == "appos"):
             appos.append(token.text)
-        if "pobj" in token.dep_ or ((token.dep_ == "nmod" or token.dep_ == "compound") and token.head.dep_ == "pobj"):
+        if "pobj" in token.dep_ or ((
+                                            token.dep_ == "nmod" or token.dep_ == "compound" or token.dep_ == "amod") and token.head.dep_ == "pobj"):
             pobject.append(token.lemma_)
         if token.dep_ == "attr" or (token.dep_ == "compound" and token.head.dep_ == "attr"):
             attr.append(token.lemma_)
@@ -210,6 +237,18 @@ def create_and_fire_query_adv(line):
     pcomp = fix_redundancy(' '.join(pcomp))
     oprd = fix_redundancy(' '.join(oprd))
 
+    # print("predicate", predicate)
+    # print("subject", subject)
+    # print("extra", extra)
+    # print("dobject", dobject)
+    # print("poss", poss)
+    # print("appos", appos)
+    # print("pobject", pobject)
+    # print("labeled", labeled)
+    # print("attr", attr)
+    # print("pcomp", pcomp)
+    # print("oprd", oprd)
+
     properties = []
     entities = []
     ans = []
@@ -218,11 +257,6 @@ def create_and_fire_query_adv(line):
     if not ans and oprd and predicate:
         entities = find_matches_ent(oprd)
         properties = find_matches_prop(predicate)
-        ans = find_answer(properties, entities)
-    # ent = pobject; prop = pcomp
-    if not ans and pobject and pcomp:
-        entities = find_matches_ent(pobject)
-        properties = find_matches_prop(pcomp)
         ans = find_answer(properties, entities)
     # ent = extra; prop = pcomp
     if not ans and extra and pcomp:
@@ -249,15 +283,20 @@ def create_and_fire_query_adv(line):
         entities = find_matches_ent(labeled)
         properties = find_matches_prop(pcomp)
         ans = find_answer(properties, entities)
+    # ent = labeled; prop = pobject
+    if not ans and pobject and labeled:
+        entities = find_matches_ent(labeled)
+        properties = find_matches_prop(pobject)
+        ans = find_answer(properties, entities)
     # ent = labeled; prop = subject
     if subject and labeled and not ans:
         entities = find_matches_ent(labeled)
         properties = find_matches_prop(subject)
         ans = find_answer(properties, entities)
-    # ent = labeled; prop = pobject
-    if not ans and pobject and labeled:
+    # ent = labeled; prop = attr
+    if not ans and labeled and attr:
+        properties = find_matches_prop(attr)
         entities = find_matches_ent(labeled)
-        properties = find_matches_prop(pobject)
         ans = find_answer(properties, entities)
     # ent = labeled; prop = predicate
     if not ans and predicate and labeled:
@@ -273,6 +312,11 @@ def create_and_fire_query_adv(line):
     if not ans and dobject and predicate:
         properties = find_matches_prop(predicate)
         entities = find_matches_ent(dobject)
+        ans = find_answer(properties, entities)
+    # ent = pobject; prop = subject
+    if not ans and pobject and subject:
+        entities = find_matches_ent(pobject)
+        properties = find_matches_prop(subject)
         ans = find_answer(properties, entities)
     # ent = attr; prop = subject
     if not ans and attr and subject:
@@ -313,6 +357,16 @@ def create_and_fire_query_adv(line):
     if not ans and dobject and labeled:
         entities = find_matches_ent(labeled)
         properties = find_matches_prop(dobject)
+        ans = find_answer(properties, entities)
+    # ent = subject; prop = predicate
+    if not ans and subject and predicate:
+        entities = find_matches_ent(subject)
+        properties = find_matches_prop(predicate)
+        ans = find_answer(properties, entities)
+    # ent = labeled; prop = oprd
+    if not ans and labeled and oprd:
+        entities = find_matches_ent(labeled)
+        properties = find_matches_prop(oprd)
         ans = find_answer(properties, entities)
 
     if ans:
