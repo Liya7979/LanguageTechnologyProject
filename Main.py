@@ -99,10 +99,8 @@ def check_type(string):
 
 
 def main(argv):
-    f = open("questions.txt", "r", encoding="utf-8")
     index = 1
     for line in sys.stdin:
-    #for line in f:
         question = line.split('\t')
         if len(question) > 1: line = question[1]
         line = line.strip()
@@ -121,7 +119,6 @@ def main(argv):
         if answer == 0:
             print("\t", "No answer available")
         index += 1
-    f.close()
 
 
 if __name__ == "__main__":

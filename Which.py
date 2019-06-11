@@ -36,7 +36,7 @@ def check_predefined(string):
     if "band" in string or "member" in string or "part" in string:
         return ["P463", "P361", "P527"]
     if "be" in string:
-        return ["P175", "P19", "P470", "P131", "P495"]
+        return ["P361","P175", "P19", "P470", "P131", "P495" ]
     if "found" in string or "form" in string:
         return ["P112", "P571", "P127"]
     if "perform" in string or "album" in string:
@@ -186,7 +186,7 @@ def create_and_fire_query_adv(line):
 
     flag = 0
     for token in line:
-        # print(token.text, token.lemma_, token.dep_, token.head.lemma_)
+        #print(token.text, token.lemma_, token.dep_, token.head.lemma_)
         if token.text == "\"":
             flag = 1 - flag
             continue
@@ -199,12 +199,12 @@ def create_and_fire_query_adv(line):
             labeled.append(token.text)
             continue
         if "nsubj" in token.dep_ and token.lemma_ != "-PRON-":
-            subject.append(token.lemma_)
+            subject.append(token.text)
         if token.dep_ == "poss" and "nsubj" in token.head.dep_:
             subject.append(token.text)
         if (
                 token.dep_ == "compound" or token.dep_ == "amod" or token.dep_ == "nmod" or token.dep_ == "advcl") and "nsubj" in token.head.dep_:
-            subject.append(token.lemma_)
+            subject.append(token.text)
         if token.dep_ == "ROOT":
             predicate.append(token.lemma_)
         if (token.dep_ == "advmod" or token.dep_ == "nummod") and (
