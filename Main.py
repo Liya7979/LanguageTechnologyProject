@@ -99,10 +99,10 @@ def check_type(string):
 
 
 def main(argv):
-    f = open("questions.txt", "r", encoding="utf-8")
+    f = open("q_liya.txt", "r", encoding="utf-8")
     index = 1
-    for line in sys.stdin:
-        # for line in f:
+    # for line in sys.stdin:
+    for line in f:
         question = line.split('\t')
         if len(question) > 1: line = question[1]
         line = line.strip()
@@ -116,9 +116,10 @@ def main(argv):
             print(q_num, end='')
             answer = check_type(line)
         except Exception as e:
-            print("Crashed: ", e)
+            answer = 0
+        # print("Crashed: ", e)
         if answer == 0:
-            print("\t","No answer available")
+            print("\t", "No answer available")
         index += 1
     f.close()
 
