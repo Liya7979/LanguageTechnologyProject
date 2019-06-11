@@ -66,10 +66,10 @@ def main(argv):
     for line in f:
         line = line.rstrip()  # removes newline
         print(line)
-        # try:
-        answer = check_type(line)
-        # except Exception as e:
-        # print("Crashed: ", e)
+        try:
+            answer = check_type(line)
+        except Exception as e:
+            print("Crashed: ", e)
         if answer == 0:
             print("No answer available")
 
