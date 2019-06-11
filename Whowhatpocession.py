@@ -178,6 +178,7 @@ def create_and_fire_queryWhowhatpocession(line):
 
     # Print available answers
     findflag = 0
+    total_ans = []
     for X in result_pro:
         if findflag == 0:
             for Y in result_en:
@@ -185,7 +186,8 @@ def create_and_fire_queryWhowhatpocession(line):
                 if (data['results']['bindings'] != []):
                     for item in data['results']['bindings']:
                         for var in item:
-                            print("{}".format(item[var]['value']))
+                            total_ans.append("{}".format(item[var]['value']))
+                    print("\t",'\t'.join(total_ans))
                     return 1
 
     return 0

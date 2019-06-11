@@ -198,7 +198,7 @@ def create_and_fire_queryYesorNoBe(line):
         s = re.sub('[?]', '', line)
         m = re.search('(Is|Are)(.*)(a|the)(.*)', s)
         if not m:
-            print("Yes")
+            print("\t", "Yes")
             return
         allobj = (m.group(2))
         allanswer1 = (m.group(4))
@@ -234,7 +234,7 @@ def create_and_fire_queryYesorNoBe(line):
 
     if (allsub == "") or (allobj == "") or (allanswer1 == ""):
         # Random Guess
-        print("Yes")
+        print("\t", "Yes")
         return 1
 
     params_prop['search'] = allsub
@@ -265,18 +265,18 @@ def create_and_fire_queryYesorNoBe(line):
 
     if allanswer1 in result:
         if (cc == 0) and onlyflag == 0:
-            print("Yes")
+            print("\t", "Yes")
             return 1
         if (cc == 1) and onlyflag == 0:
             if allanswer2 in result:
-                print("Yes")
+                print("\t", "Yes")
                 return 1
         if (cc == 0) and onlyflag == 1:
             new_result = (" ".join(result))
             new_result = new_result.replace(allanswer1, "")
             new_result = new_result.strip()
             if not new_result:
-                print("Yes")
+                print("\t", "Yes")
                 return 1
         if (cc == 1) and onlyflag == 1:
             new_result = (" ".join(result))
@@ -284,14 +284,14 @@ def create_and_fire_queryYesorNoBe(line):
             new_result = new_result.replace(allanswer2, "")
             new_result = new_result.strip()
             if not new_result:
-                print("Yes")
+                print("\t", "Yes")
                 return 1
 
     if findflag == 1:
-        print("No")
+        print("\t", "No")
         return 1
 
     if (findflag == 0):
         # No answers available : Random Guess
-        print("Yes")
+        print("\t", "Yes")
         return 1

@@ -370,6 +370,6 @@ def create_and_fire_query_adv(line):
         ans = find_answer(properties, entities)
 
     if ans:
-        print(str(' '.join(ans)))
+        print("\t", str(''.join(ans)))
         return 1
     return 0

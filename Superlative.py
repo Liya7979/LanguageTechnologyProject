@@ -118,10 +118,11 @@ def print_answer(query):
                 if item[var]['value'] is "0":
                     return 0
                 flag = 1
-                print(item[var]['value'])
+                print("\t", item[var]['value'], end='')
                 reinitialize_globals()
     except:
         return 0
+    print('\n')
     return flag
 
 

@@ -276,8 +276,7 @@ def create_and_fire_query_WhenWhere(line):
         ans = find_answer(properties, entities)
 
     if ans:
-        for a in ans:
-            print(str(a))
+        print("\t", '\t'.join(ans))
         return 1
     return 0
 

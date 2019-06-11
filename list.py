@@ -145,6 +145,7 @@ def create_and_fire_query_dobj(line):
     ans = find_answer(properties, entities)
 
     if ans:
-        print(' '.join(ans))
+        total_ans = '\t'.join(ans)
+        print("\t",total_ans)
         return 1
     return 0

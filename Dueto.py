@@ -89,7 +89,6 @@ def create_and_fire_queryDueto(line):
     if answer is None:
         return 0
     else:
-        for ans in answer:
-            print(ans)
+        print("\t",'\t'.join(answer))
 
     return 1

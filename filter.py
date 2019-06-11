@@ -273,6 +273,7 @@ def create_and_fire_query_filter(line):
         properties = find_matches_prop(predicate)
         ans = find_answer(properties, entities, prep, date)
     if ans:
-        print(' '.join(ans))
+        total_ans = '\t'.join(ans)
+        print("\t", total_ans)
         return 1
     return 0

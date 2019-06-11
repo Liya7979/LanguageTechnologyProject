@@ -79,7 +79,7 @@ def compute_age(birthday, death):
     dday = str(death[0])
     b = datetime.strptime(bday[0:4] + "/" + bday[5:7] + "/" + bday[8:10], "%Y/%m/%d")
     d = datetime.strptime(dday[0:4] + "/" + dday[5:7] + "/" + dday[8:10], "%Y/%m/%d")
-    print((int(((d - b).days) / 365)))
+    print("\t", (int(((d - b).days) / 365)))
     return 1
 
 
@@ -239,6 +239,5 @@ def create_and_fire_query_How(line):
     if not ans:
         return 0
     else:
-        for a in ans:
-            print(str(a))
+        print("\t",'\t'.join(ans))
     return 1

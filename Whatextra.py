@@ -157,7 +157,7 @@ def create_and_fire_queryWhatextra(line):
             flag = 1
 
     for token in parse:
-        print("\t".join((token.text, token.dep_)))
+        #print("\t".join((token.text, token.dep_)))
         if token.text == "The":
             obj.append(token.text)
         if token.dep_ == "nsubj" or token.dep_ == "attr" or token.dep_ == "dobj":
@@ -199,9 +199,9 @@ def create_and_fire_queryWhatextra(line):
         result_en.append(e['id'])
 
 
-    print(allobj)
     # Print available answers
     findflag = 0
+    total_ans = []
     for X in result_pro:
         if findflag == 0:
             for Y in result_en:
@@ -209,7 +209,8 @@ def create_and_fire_queryWhatextra(line):
                 if (data['results']['bindings'] != []):
                     for item in data['results']['bindings']:
                         for var in item:
-                            print("{}".format(item[var]['value']))
+                            total_ans.append("{}".format(item[var]['value']))
+                    print("\t",'\t'.join(total_ans))
                     return 1
 
     return 0
