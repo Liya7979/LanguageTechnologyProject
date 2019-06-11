@@ -97,13 +97,13 @@ def check_type(string):
 
 
 def main(argv):
-    f = open("questions_livia.txt", "r+", encoding="utf-8")
-    for line in sys.stdin:
-    #for line in f:
-        line = line.strip()  # removes newline
+    f = open("questions.txt", "r", encoding="utf-8")
+    #for line in sys.stdin:
+    for line in f:
+        line = line.strip()
         if not line:
             continue
-        print(line)
+        print("--", line, "--")
         answer = 0
         try:
             answer = check_type(line)
