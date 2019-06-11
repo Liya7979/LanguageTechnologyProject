@@ -65,6 +65,8 @@ def find_matches_prop(string):
 			string = string.replace("when", "")
 		if "where" in string:
 			string = string.replace("where", "")
+		if string == "":
+			return None
 		params_prop['search'] = string
 		json = requests.get(url_api,params_prop).json()
 		for result in json['search']:

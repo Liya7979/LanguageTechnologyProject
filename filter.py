@@ -11,28 +11,8 @@ params_prop = {'action':'wbsearchentities','language':'en', 'format':'json', 'ty
 nlp = spacy.load("en_core_web_sm")
 
 def check_predefined(string):
-	if "name" in string:
-		return ["P1477", "P735"]
-	if "record label" in string:
-		return ["P264"]
-	if "release" in string:
-		return ["P577"]
-	if "break" in string or "stop" in string:
-		return ["P576"]
-	if "city" in string or "town" in string:
-		return ["P19", "P470", "P131", "P495"]
-	if "bear" in string:
-		return ["P569", "P19"]
-	if "band" in string or "member" in string or "part" in string:
-		return ["P463", "P361"]
-	if "be" in string:
-		return ["P175"]
-	if "found" in string or "form" in string :
-		return ["P112", "P571", "P127"]
-	if "perform" in string or "album" in string:
-		return ["P361", "P1729"]
-	if "start" in string or "invent" in string or "century" in string or "year" in string or "date" in string:
-		return ["P571", "P2031", "P575"]
+	if "be" in string or "who" in string or "join" in string:
+		return ["P527"]
 	return None
 
 
@@ -40,7 +20,6 @@ def find_matches_ent(string):
 	params_entity['search'] = string
 	json = requests.get(url_api,params_entity).json()
 	entities = []
-
 	for result in json['search']:
 		entities.append(result['id'])
 	return entities
@@ -49,7 +28,7 @@ def find_matches_ent(string):
 def find_matches_prop(string):
 	properties = []
 	prop = check_predefined(string)
-	if prop:
+	if prop is not None:
 		return prop
 	else:
 		if "when" in string:
@@ -65,11 +44,36 @@ def find_matches_prop(string):
 	return properties
 
 
-def make_query(property, entity):
+def make_query_before(property, entity, year):
 	answers=[]
 	query= '''
 		SELECT ?answerLabel WHERE { 
-			wd:''' + entity + ''' wdt:''' + property + ''' ?answer.
+			wd:''' + entity + ''' p:''' + property + ''' ?statement.
+			?statement ps:''' + property + ''' ?answer.
+			?statement pq:P580 ?start.
+			FILTER (?start < "''' + year + '''-01-01T00:00:00Z"^^xsd:dateTime)
+			SERVICE wikibase:label {
+				bd:serviceParam wikibase:language "en" .
+			}
+		}'''
+	#print(query)
+	data = requests.get(url, params={'query': query, 'format': 'json'}).json()
+	for item in data['results']['bindings']:
+		for var in item :
+			answers.append(item[var]['value'])
+	if not answers:
+		return None
+	else:
+		return answers
+
+def make_query_after(property, entity, year):
+	answers=[]
+	query= '''
+		SELECT ?answerLabel WHERE { 
+			wd:''' + entity + ''' p:''' + property + ''' ?statement.
+			?statement ps:''' + property + ''' ?answer.
+			?statement pq:P580 ?start.
+			FILTER (?start >= "''' + year + '''-01-01T00:00:00Z"^^xsd:dateTime)
 			SERVICE wikibase:label {
 				bd:serviceParam wikibase:language "en" .
 			}
@@ -83,14 +87,43 @@ def make_query(property, entity):
 	else:
 		return answers
 
+def make_query_between(property, entity, date):
+	year1 = date.split(" ")[1]
+	year2 = date.split(" ")[3]
+	answers=[]
+	query= '''
+		SELECT ?answerLabel WHERE { 
+			wd:''' + entity + ''' p:''' + property + ''' ?statement.
+			?statement ps:''' + property + ''' ?answer.
+			?statement pq:P580 ?start.
+			?statement pq:P582 ?end.
+			FILTER (?start <= "''' + year1 + '''-01-01T00:00:00Z"^^xsd:dateTime) 
+			FILTER (?end >= "''' + year2 + '''-01-01T00:00:00Z"^^xsd:dateTime)
+			SERVICE wikibase:label {
+				bd:serviceParam wikibase:language "en" .
+			}
+		}'''
+	data = requests.get(url, params={'query': query, 'format': 'json'}).json()
+	for item in data['results']['bindings']:
+		for var in item :
+			answers.append(item[var]['value'])
+	if not answers:
+		return None
+	else:
+		return answers
 
-def find_answer(properties, entities):
+def find_answer(properties, entities, prep, date):
 	if not entities or not properties:
 		return None
 	ans = None
 	for entity in entities:
 		for property in properties:
-			ans = make_query(property, entity)
+			if prep == 2:
+				ans = make_query_before(property, entity, date)
+			if prep == 1:
+				ans = make_query_after(property, entity, date)
+			if prep == 3:
+				ans = make_query_between(property, entity, date)
 			if ans:
 				return ans
 	return ans
@@ -100,14 +133,12 @@ def fix_negation(string):
 		return string.replace("be ", "")
 	if " n't" in string:
 		return string.replace(" n't", "n't")
-	if "'s" in string:
-		return string.replace("'s", "")
 	return string
 
 def fix_redundancy(string):
 	if "which" in string:
 			string = string.replace("which", "")
-			if string == "":
+			if string == " ":
 				return None
 	if "rock" in string and len(string.split()) > 1:
 		string = string.replace("rock", "")
@@ -140,7 +171,7 @@ def fix_redundancy(string):
 	return string
 
 # example: When/Where was X born?
-def create_and_fire_query_adv(line):
+def create_and_fire_query_filter(line):
 	line = line.rstrip()
 	line = nlp(line) 
 
@@ -155,9 +186,11 @@ def create_and_fire_query_adv(line):
 	attr = []
 	pcomp = []
 	oprd = []
+	date = []
 
 
 	flag = 0
+	prep = 0
 	for token in line:
 		if token.text == "\"":
 			flag = 1 - flag
@@ -167,16 +200,23 @@ def create_and_fire_query_adv(line):
 			continue
 		if token.dep_ == "oprd" or (token.dep_ == "compound" and token.head.dep_ == "oprd"):
 			oprd.append(token.text)
-		if token.ent_type_:  #== "PERSON" or token.ent_type_ == "ONG" or token.ent_type_ == "WORK_OF_ART":
-			labeled.append(token.text)
+		if token.ent_type_:
+			if token.ent_type_ == "DATE" or token.ent_type_ == "CARDINAL":
+					date.append(token.text)
+			else:
+				labeled.append(token.text)
 			continue
+		if token.dep_ == "prep" and token.lemma_ == "after":
+			prep = 1
+		if token.dep_ == "prep" and token.lemma_ == "before":
+			prep = 2
 		if "nsubj" in token.dep_ and token.lemma_ != "-PRON-":
 			subject.append(token.lemma_)
 		if token.dep_ == "poss" and "nsubj" in token.head.dep_:
 			subject.append(token.text)
 		if (token.dep_ == "compound" or token.dep_ == "amod" or token.dep_ == "nmod" or token.dep_ == "advcl") and "nsubj" in token.head.dep_:
 			subject.append(token.lemma_)
-		if token.dep_ == "ROOT":
+		if token.dep_ == "ROOT" or (token.dep_ == "attr" and token.head.dep_ == "ROOT"):
 			predicate.append(token.lemma_)	
 		if (token.dep_ == "advmod" or token.dep_ == "nummod") and (token.head.dep_ == "ROOT" or token.head.dep_ == "auxpass" or token.head.dep_ == "advcl"):
 			predicate.append(token.lemma_)
@@ -192,6 +232,8 @@ def create_and_fire_query_adv(line):
 			attr.append(token.lemma_)
 		if token.dep_ == "pcomp" or (token.dep_ == "compound" and token.head.dep_ == "pcomp"):
 			pcomp.append(token.lemma_)
+		
+
 
 	predicate = fix_redundancy(fix_negation(' '.join(predicate)))
 	subject = fix_redundancy(' '.join(subject))
@@ -200,119 +242,32 @@ def create_and_fire_query_adv(line):
 	poss = fix_redundancy(' '.join(poss))
 	appos = fix_redundancy(' '.join(appos))
 	pobject = fix_redundancy(' '.join(pobject))
-	labeled = fix_negation(fix_redundancy(' '.join(labeled)))
+	labeled = fix_redundancy(' '.join(labeled))
 	attr = fix_redundancy(' '.join(attr))
 	pcomp = fix_redundancy(' '.join(pcomp))
 	oprd = fix_redundancy(' '.join(oprd))
-
+	date = ' '.join(date)
+	
 	properties = []
 	entities = []
 	ans = []
 
-# ent = oprd; prop = predicate
-	if not ans and oprd and predicate:
-		entities = find_matches_ent(oprd)
-		properties = find_matches_prop(predicate)		
-		ans = find_answer(properties, entities)
-# ent = pobject; prop = pcomp
-	if not ans and pobject and pcomp:
+	if ("between" in date):
+		prep = 3
+	if not ans and predicate and pobject and date:
 		entities = find_matches_ent(pobject)
-		properties = find_matches_prop(pcomp)		
-		ans = find_answer(properties, entities)
-# ent = extra; prop = pcomp
-	if not ans and extra and pcomp:
-		properties = find_matches_prop(pcomp)
-		entities = find_matches_ent(extra)
-		ans = find_answer(properties, entities)
-# ent = extra; prop = pobject
-	if not ans and pobject and extra:
-		entities = find_matches_ent(extra)
-		properties = find_matches_prop(pobject)		
-		ans = find_answer(properties, entities)
-# ent = extra; prop = subject
-	if not ans and extra and subject:
-		properties = find_matches_prop(subject)
-		entities = find_matches_ent(extra)
-		ans = find_answer(properties, entities)
-# ent = extra; prop = predicate
-	if not ans and predicate and extra:
-		entities = find_matches_ent(extra)
-		properties = find_matches_prop(predicate)		
-		ans = find_answer(properties, entities)
-# ent = labeled; prop = pcomp
-	if not ans and labeled and pcomp:
-		entities = find_matches_ent(labeled)
-		properties = find_matches_prop(pcomp)	
-		ans = find_answer(properties, entities)
-# ent = labeled; prop = subject
-	if subject and labeled and not ans:
-		entities = find_matches_ent(labeled)
-		properties = find_matches_prop(subject)
-		ans = find_answer(properties, entities)
-# ent = labeled; prop = pobject
-	if not ans and pobject and labeled:
-		entities = find_matches_ent(labeled)
-		properties = find_matches_prop(pobject)
-		ans = find_answer(properties, entities)
-# ent = labeled; prop = predicate
-	if not ans and predicate and labeled:
-		entities = find_matches_ent(labeled)
-		properties = find_matches_prop(predicate)		
-		ans = find_answer(properties, entities)
-# ent = dobj; prop = subject
-	if not ans and dobject and subject:
-		properties = find_matches_prop(subject)
-		entities = find_matches_ent(dobject)
-		ans = find_answer(properties, entities)
-# ent = dobj; prop = predicate
-	if not ans and dobject and predicate:
 		properties = find_matches_prop(predicate)
-		entities = find_matches_ent(dobject)
-		ans = find_answer(properties, entities)
-# ent = attr; prop = subject
-	if not ans and attr and subject:
-		properties = find_matches_prop(subject)
-		entities = find_matches_ent(attr)
-		ans = find_answer(properties, entities)
-# ent = subject; prop = pcomp
-	if not ans and subject and pcomp:
-		properties = find_matches_prop(pcomp)
-		entities = find_matches_ent(subject)
-		ans = find_answer(properties, entities)
-# ent = attr; prop = pcomp
-	if not ans and attr and pcomp:
-		properties = find_matches_prop(pcomp)
-		entities = find_matches_ent(attr)
-		ans = find_answer(properties, entities)
-		# ent = labeled; prop = apposition
-	if not ans and labeled and appos:
-		properties = find_matches_prop(appos)
+		ans = find_answer(properties, entities, prep, date)
+	if not ans and predicate and labeled and date:
 		entities = find_matches_ent(labeled)
-		ans = find_answer(properties, entities)
-# ent = appos; prop = predicate
-	if not ans and appos and predicate:
 		properties = find_matches_prop(predicate)
-		entities = find_matches_ent(appos)
-		ans = find_answer(properties, entities)
-# ent = predicate; prop = subject
-	if not ans and subject and predicate:
-		properties = find_matches_prop(subject)
-		entities = find_matches_ent(predicate)
-		ans = find_answer(properties, entities)
-# ent = subject; prop = pobject
-	if not ans and subject and pobject:
-		properties = find_matches_prop(pobject)
-		entities = find_matches_ent(subject)
-		ans = find_answer(properties, entities)
-# ent = labeled; prop = dobject
-	if not ans and dobject and labeled:
-		entities = find_matches_ent(labeled)
-		properties = find_matches_prop(dobject)
-		ans = find_answer(properties, entities)
-
+		ans = find_answer(properties, entities, prep, date)	
+	if not ans and predicate and extra and date:
+		entities = find_matches_ent(extra)
+		properties = find_matches_prop(predicate)
+		ans = find_answer(properties, entities, prep, date)
 	if ans:
-		print(str(' '.join(ans)))
+		print(' '.join(ans))
 		return 1
 	return 0
-
 

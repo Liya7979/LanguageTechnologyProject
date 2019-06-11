@@ -22,6 +22,16 @@ def special_checking(line,allobj):
         allobj = "The Script"
     return allobj
 
+def fix_redundancy(string):
+
+    if "what" in string:
+        string = string.replace("what", "")
+
+    if "What" in string:
+        string = string.replace("What", "")
+
+    return string
+
 def check_predefined(string):
     if ("What" in string or "what" in string) and ("occupations" in string or "occupation" in string):
         return ["P106"]
@@ -39,12 +49,17 @@ def check_predefined(string):
         return ["P509"]
     if ("What" in string or "what" in string) and ("instrument" in string or "instruments" in string):
         return ["P1303"]
-    if ("What" in string or "what" in string) and ("bands"in string or "band" in string) and ("play" in string or "played" in string or "plays" in string):
-        return ["P527","P463","P361"]
+    if ("What" in string or "what" in string) and ("bands"in string or "band" in string) and ("play" in string or "played" in string or "plays" in string or "perform" in string or "performs" in string or"performed"in string):
+        return ["P463","P361","P527"]
     if ("What" in string or "what" in string) and "country" in string and "from":
         return ["P27","P495"]
     if ("What" in string or "what" in string) and "record label" in string:
         return ["P264"]
+    if ("What" in string or "what" in string) and ("award" in string or "awards" in string):
+        return ["P166"]
+    if ("What" in string or "what" in string) and ("kills" in string or "killed" in string or "killer"in string):
+        return ["P157","P509"]
+
 
 # query with wikidata
 def query(prop, entity):
@@ -70,14 +85,17 @@ def create_and_fire_queryWhatextra(line):
         #print("\t".join((token.text, token.dep_)))
         if token.text == "The":
             obj.append(token.text)
-        if token.dep_ == "nsubj" or token.dep_ == "attr":
+        if token.dep_ == "nsubj" or token.dep_ == "attr" or token.dep_=="dobj":
             obj.append(token.text)
-        if token.dep_ == "compound" and (token.head.dep_ == "nsubj" or token.head.dep_ == "attr"):
+        if token.dep_ == "compound" and (token.head.dep_ == "nsubj" or token.head.dep_ == "attr" or token.head.dep_ == "dobj"  ):
             obj.append(token.text)
 
+
     allobj = (" ".join(obj))
+
     # Special entity checking
-    allobj =special_checking(line,allobj)
+    allobj = special_checking(line,allobj)
+    allobj = fix_redundancy(allobj)
 
     # Label checking
     for en in labeled:
