@@ -1,3 +1,4 @@
+# Completed by Galiya Yeshmagambetova, Malina Chichirau, Tianai Dong, Livia Regus.
 import sys
 
 from Dueto import create_and_fire_queryDueto
